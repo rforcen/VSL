@@ -140,20 +140,52 @@ Each sound channel is defined by an expression, we've already seen some examples
 
 implicit multiplication, default operator is multiply so two terms with no operator are multiplied, i.e. ~3 ~440 is ~3 \* ~440
 
-||
-||
-||
-||
-||
+Arithmetic
+–(negation) + - * / ^ (power) !(!n=n*(n-1)*n-2*n-3…). 
+
+Logical
+(>, <, >=, <=, =, <>) are also implemented, remember ‘t’ variable can be addressed with a 2π scale so if you want to play a 440Hz tone from second 2 execute: sin(440t)*(t>2·2π)
+Symbols
+{amp, hz, phase} = wave definition
+\start:end\ = lap(start, end)
+[secs] = translated seconds to sample value
+|expr| = abs value of expression
+‹k› = exp(k*t)
+⬳(expr)=saw(expr)
+∿(expr) = sin(expr)
+☯(freq) = sin(t * freq) * sin(freq / (t + 6π));
+§(from, to, inc) = sequence(from, to, inc)
+✬(base, slope, islope, n)
+? = random 0..1
+
 
 Functions supported include:
 
-||
-||
-||
-||
-||
-||
+sin
+cos
+tan
+exp
+log
+log10
+int
+sqrt
+asin
+acos
+atan
+saw
+wave
+note
+tone
+osc
+sec
+Abs
+lap
+
+
+
+
+
+
 
  
 
