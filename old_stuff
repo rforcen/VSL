@@ -1,0 +1,440 @@
+void setvalue(int nid, double value) {
+  try {
+    auto &tv = tab_values[size_t(nid)];
+    switch (tv.type) {
+      case Table_Values::NUM_ID:
+        tv.di->d = value;
+        break;
+      case Table_Values::STRING_ID:
+        tv.str_ix = int(value);
+        break;
+      default:
+        break;
+    }
+  } catch (...) {
+  }
+}
+wstring get_str(int nid) {
+  wstring rv;
+  try {
+    auto &tv = tab_values[size_t(nid)];
+    switch (tv.type) {
+      case Table_Values::NUM_ID:
+        rv = to_wstring(tv.di->d);
+        break;
+      case Table_Values::STRING_ID:
+        rv = string_depot[size_t(tv.str_ix)];
+        break;
+      default:
+        break;
+    }
+  } catch (...) {
+  }
+  return rv;
+}
+
+double getvalue(int nid) {
+  double rv = 0;
+  try {
+    auto &tv = tab_values[size_t(nid)];
+    switch (tv.type) {
+      case Table_Values::NUM_ID:
+        rv = tv.di->d;
+        break;
+      case Table_Values::STRING_ID:
+        rv = tv.str_ix;
+        break;
+      default:
+        break;
+    }
+  } catch (...) {
+  }
+  return rv;
+}
+double execute(double t, int from_pc, int to_pc) {
+  bool err = false;
+  vector<int> n_params, sp_base;
+
+  sec_eval++;
+
+  sp = err_number = 0;
+
+  try {
+    for (int pc = from_pc; pc < to_pc && !err_number;) {
+      switch (code[pc]) {
+        case PUSH_CONST:
+          pc++;
+          stack[sp++] = *reinterpret_cast<double *>(code + pc);
+          pc += sizeof(double);
+          break;
+        case PUSH_T:
+          pc++;
+          stack[sp++] = t;
+          break;
+        case PUSH_ID:
+          pc++;
+          stack[sp++] =
+              compiler->getvalue(*reinterpret_cast<int *>(code + pc));
+          pc += sizeof(int);
+          break;
+        case PUSH_STR:
+          pc++;
+          stack[sp++] = *reinterpret_cast<int *>(code + pc);
+          pc += sizeof(int);
+          break;
+
+        case PARAM:  // push param
+          pc++;
+          stack[sp++] = stack[sp_base.back() - 1 - n_params.back() +
+                              *reinterpret_cast<int *>(code + pc)];
+          pc += sizeof(int);
+          break;
+        case FUNC:  // pc, nparams
+          stack[sp++] = double(pc + 1 + 2 * int(sizeof(int)));
+          n_params.push_back(
+              *reinterpret_cast<int *>(code + pc + 1 + sizeof(int)));
+          sp_base.push_back(sp);
+          pc = *reinterpret_cast<int *>(code + pc + 1);
+          break;
+        case RET: {
+          int nr = *reinterpret_cast<int *>(code + pc + 1);
+          pc = int(stack[sp - 2]);
+          stack[sp - (nr + 2)] = stack[sp - 1];
+          sp -= nr + 2 - 1;
+          sp_base.pop_back();
+          n_params.pop_back();
+        } break;
+
+        case POP:
+          pc++;
+          sp--;
+          compiler->setvalue(*reinterpret_cast<int *>(code + pc), stack[sp]);
+          pc += sizeof(int);
+          break;
+        case PLUS:
+          sp--;
+          stack[sp - 1] += stack[sp];
+          pc++;
+          break;
+        case MINUS:
+          sp--;
+          stack[sp - 1] -= stack[sp];
+          pc++;
+          break;
+        case EQ:
+          sp--;
+          stack[sp - 1] = (stack[sp - 1] - stack[sp]);
+          pc++;
+          break;
+        case NE:
+          sp--;
+          stack[sp - 1] = (stack[sp - 1] - stack[sp]);
+          pc++;
+          break;
+        case LT:
+          sp--;
+          stack[sp - 1] = stack[sp - 1] < stack[sp];
+          pc++;
+          break;
+        case LE:
+          sp--;
+          stack[sp - 1] = stack[sp - 1] <= stack[sp];
+          pc++;
+          break;
+        case GT:
+          sp--;
+          stack[sp - 1] = stack[sp - 1] > stack[sp];
+          pc++;
+          break;
+        case GE:
+          sp--;
+          stack[sp - 1] = stack[sp - 1] >= stack[sp];
+          pc++;
+          break;
+        case MULT:
+          sp--;
+          stack[sp - 1] *= stack[sp];
+          pc++;
+          break;
+        case DIV:
+          sp--;
+          if (stack[sp] != 0.) stack[sp - 1] /= stack[sp];
+          pc++;
+          break;
+        case POWER:
+          sp--;
+          stack[sp - 1] = pow(stack[sp - 1], stack[sp]);
+          pc++;
+          break;
+        case FACT:
+          stack[sp - 1] = factorial(floor(stack[sp - 1]));
+          pc++;
+          break;
+        case NEG:
+          stack[sp - 1] = -stack[sp - 1];
+          pc++;
+          break;
+
+        case RATE:
+          stack[sp - 1] = rate(compiler->get_string(int(stack[sp - 1])));
+          pc++;
+          break;
+
+        case FSIN:
+          stack[sp - 1] = sin(stack[sp - 1]);
+          pc++;
+          break;
+        case FCOS:
+          stack[sp - 1] = cos(stack[sp - 1]);
+          pc++;
+          break;
+        case FTAN:
+          stack[sp - 1] = tan(stack[sp - 1]);
+          pc++;
+          break;
+        case FASIN:
+          stack[sp - 1] = asin(stack[sp - 1]);
+          pc++;
+          break;
+        case FACOS:
+          stack[sp - 1] = acos(stack[sp - 1]);
+          pc++;
+          break;
+        case FATAN:
+          stack[sp - 1] = atan(stack[sp - 1]);
+          pc++;
+          break;
+        case FEXP:
+          stack[sp - 1] = exp(stack[sp - 1]);
+          pc++;
+          break;
+        case FINT:
+          stack[sp - 1] = floor(stack[sp - 1]);
+          pc++;
+          break;
+        case FABS:
+          stack[sp - 1] = fabs(stack[sp - 1]);
+          pc++;
+          break;
+
+        case FLOG:
+          if (stack[sp - 1] > 0)
+            stack[sp - 1] = log(stack[sp - 1]);
+          else
+            stack[sp - 1] = 0;
+          pc++;
+          break;
+        case FLOG10:
+          if (stack[sp - 1] > 0)
+            stack[sp - 1] = log10(stack[sp - 1]);
+          else
+            stack[sp - 1] = 0;
+          pc++;
+          break;
+        case FSQRT:
+          if (stack[sp - 1] >= 0)
+            stack[sp - 1] = sqrt(stack[sp - 1]);
+          else
+            stack[sp - 1] = 0;
+          pc++;
+          break;
+
+        case SEC:
+          stack[sp - 1] = stack[sp - 1] * 2 * M_PI;
+          pc++;
+          break;
+        case OSC:
+          stack[sp - 1] = sin(t * stack[sp - 1]);
+          pc++;
+          break;
+        case ABS:
+          stack[sp - 1] = fabs(stack[sp - 1]);
+          pc++;
+          break;
+
+        case SWAVE1:  // wave(hz)
+          pc++;
+          stack[sp - 1] = sin(t * stack[sp - 1]);
+          break;
+        case SWAVE2:  // wave(amp, hz)
+          pc++;
+          stack[sp - 2] = stack[sp - 2] * sin(t * stack[sp - 1]);
+          sp--;
+          break;
+        case SWAVE:  // wave(amp, freq, phase)
+          pc++;
+          stack[sp - 3] =
+              stack[sp - 3] * sin(t * stack[sp - 2] + stack[sp - 1]);
+          sp -= 2;
+          break;
+
+        case YINYANG: {
+          auto &f = stack[sp - 1], k = 6. * M_PI;
+          pc++;
+          f = sin(t * f) * sin(f / (t + k));
+        } break;
+
+        case FREQ_MESH: {  // *(base, slope, islope, n)
+          pc++;
+          FreqMesh &fm =
+              compiler
+                  ->freq_mesh[size_t(*reinterpret_cast<int *>(code + pc))];
+          pc += sizeof(int);
+
+          if (sp >= 4) {
+            if (!fm.is_init())
+              fm.set_param(stack[sp - 4], stack[sp - 3], uint(stack[sp - 2]),
+                           uint(stack[sp - 1]));
+
+            stack[sp - 4] = fm.gen_sample(t);
+            sp -= 3;
+          } else {
+            err = true;
+            err_number = 1;
+          }
+        } break;
+
+        case BACKSLASH: {  // \{}operator
+          pc++;
+          double res = 0;
+          if (sp > 1) {
+            if (code[pc] == TILDE) {
+              for (sp--; sp >= 0; sp--) res += sin(t * stack[sp]);
+            } else {
+              res = stack[sp - 1];
+              for (sp -= 2; sp >= 0; sp--) {
+                switch (code[pc]) {
+                  case PLUS:
+                    res += stack[sp];
+                    break;
+                  case MINUS:
+                    res -= stack[sp];
+                    break;
+                  case MULT:
+                    res *= stack[sp];
+                    break;
+                  case DIV:
+                    res /= stack[sp];
+                    break;
+                }
+              }
+            }
+            stack[0] = res;
+            sp = 1;
+          }
+
+          pc++;
+        } break;
+
+        case SEQUENCE: {
+          auto n = stack[sp - 1], end = stack[sp - 2], ini = stack[sp - 3];
+          if (n < max_stack - 10 && end != ini && sp > 2) {
+            if (end < ini) std::swap(ini, end);
+            auto inc = (end - ini) / (n - 1);
+            sp -= 3;
+            for (auto i = ini; i < end; i += inc) stack[sp++] = i;
+            stack[sp++] = end;
+          }
+          pc++;
+        } break;
+
+        case NOTE_CONST:
+          pc++;
+          stack[sp++] =
+              sin(NoteOct2Freq(
+                      *reinterpret_cast<int *>(code + pc),
+                      *reinterpret_cast<int *>(code + pc + sizeof(int))) *
+                  t);
+          pc += sizeof(int) * 2;
+          break;
+
+        case NOTE:  // note(note#, octave)
+        {
+          double &s2 = stack[sp - 2], &s1 = stack[sp - 1];
+          if (s2 > 12 || s2 < 0) s2 = 0;
+          if (s1 < 0 || s1 > 10) s1 = 0;
+          //          s2 = sin(x * NoteOct2Freq(int(s2), int(s1)));
+          s2 = NoteOct2Freq(int(s2), int(s1));
+          sp--;
+          pc++;
+        } break;
+        case TONE:  // tone(note#, octave)
+        {
+          double &s2 = stack[sp - 2], &s1 = stack[sp - 1];
+          if (s2 > 12 || s2 < 0) s2 = 0;
+          if (s1 < 0 || s1 > 10) s1 = 0;
+          s2 = NoteOct2Freq(int(s2), int(s1));
+          sp--;
+          pc++;
+        } break;
+
+        case LAP:  // lap(time1,time2)
+        {
+          double &s2 = stack[sp - 1], &s1 = stack[sp - 2];
+          if (s2 <= s1)
+            s1 = 0;
+          else
+            s1 = (t >= s1 * (2 * M_PI)) && (t <= s2 * (2 * M_PI));
+          sp--;
+          pc++;
+        } break;
+
+        case SAW1:
+          stack[sp - 1] = saw(t * stack[sp - 1]);
+          pc++;
+          break;
+        case SAW:  // saw(freq, alpha1)
+        {
+          double &s2 = stack[sp - 2] /*freq*/, &s1 = stack[sp - 1] /*alpha*/;
+          if (s2 == 0.) s2 = 0.1;
+          if (s1 < 0 || s1 > 90) s1 = 0;
+          s2 = saw(t * s2, s1);
+          sp--;
+          pc++;
+        } break;
+
+        case HZ2OCT:  // hz2oct(freq, oct)
+        {
+          double &s2 = stack[sp - 2] /*freq*/, &s1 = stack[sp - 1] /*oct*/;
+          s2 = FreqInOctave(int(s2), int(s1));
+          sp--;
+          pc++;
+        } break;
+
+        case MAGNETICRING:  // MagnetRing(Vol, Hz, Phase, on_count,
+                            // off_count)
+        {                   // vol is top of stack
+          double &vol = stack[sp - 5], hz = stack[sp - 4], ph = stack[sp - 3],
+                 onc = stack[sp - 2], offc = stack[sp - 1];
+
+          // old version Sample 'SecEval' dependant
+          // if (fmod(SecEval,(onc + offc)) <= onc) vol = (vol * sin (X*hz +
+          // ph));
+
+          // cycle dept. version
+          // double delta=(hz * 2 * M_PI) / samp;
+          double delta = hz / sample_rate;
+          if (fmod(sec_eval * delta, (onc + offc)) <= onc)
+            vol *= sin(t * hz + ph);
+          else
+            vol = 0;
+          sp -= 4;
+          pc++;
+        } break;
+
+        default:
+          err = true;
+          err_number = 1;
+          break;
+      }
+    }
+  } catch (...) {
+    err_number = 1;
+  }
+
+  if (err_number) {  // any error??
+    if (sp > 0) stack[sp - 1] = 0;
+    err = true;
+  }
+  return sp == 1 ? stack[sp - 1] : 0;
+}

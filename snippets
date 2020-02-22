@@ -1,0 +1,15 @@
+switch (sym) {
+  case NUMBER:
+    tab_values.push_back(Table_Values(id, parser->get_value()));
+    break;
+  case IDENT:
+    if (parser->get_id() == L"float") {
+      tab_values.push_back(Table_Values(L"floating_point", 1));
+      tab_values.push_back(Table_Values(L"bits_sample", 32));
+    } else
+      err = true;
+    break;
+  default:
+    err = true;
+    break;
+}
