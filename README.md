@@ -1,5 +1,7 @@
 VSL Vibrational Symbolic Language
 
+(note: icons not included in sources, create folder vs/icons and copy/define your own icon set)
+
 intro
 =====
 
