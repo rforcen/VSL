@@ -1,0 +1,9 @@
+const seconds=20, volume=0.3,
+f=440, f1=f+1, k=2e3·Ø;
+
+// /cos(t/k) factor incs freq
+let w1=~Ø sin(f t/cos(t/k));
+
+w1· ( ~π + ~(π+log(?)) + ~(π+log(?)) );
+
+

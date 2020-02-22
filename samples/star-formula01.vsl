@@ -1,0 +1,9 @@
+rpn
+const seconds=12, volume=1, 
+
+base=3510, slope=1.4, islope=2800, n=150, // freq mesh definition
+
+div0=4, div=8;
+
+base div0/ slope islope div0/ n✬; 
+base div1/ slope islope div1/ n✬; 

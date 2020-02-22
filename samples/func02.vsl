@@ -1,0 +1,8 @@
+rpn;
+
+func f0➡ 1 2+;
+func foo(a, b)➡ a b * sin;
+func foo1(a)➡ a t foo;
+
+440 foo1; 441 foo1;
+//440~; 441~;

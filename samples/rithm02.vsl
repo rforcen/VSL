@@ -1,0 +1,11 @@
+// rithm 02
+
+const seconds=20, volume=0.1,
+f=440, f1=f+1, k=Ø/20;
+
+// /cos(f/1e5 t) factor incs freq
+
+~(π+1)~Ø ∿(f t/cos(t/200k));
+~π~(Ø+1) ∿(f t/cos(t/200k));
+
+

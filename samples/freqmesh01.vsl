@@ -1,0 +1,5 @@
+// default values for mesh
+
+const seconds=28, volume=1;
+
+✬(3510, 1.4, 2800, 150);

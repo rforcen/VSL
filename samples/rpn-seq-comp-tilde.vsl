@@ -1,0 +1,6 @@
+rpn;
+
+const o=4, f=400, ini=1, end=4.2, n=4;
+
+ini    end    n§ f   \~;
+ini o+ end o+ n§ f o+\~;

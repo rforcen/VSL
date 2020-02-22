@@ -1,0 +1,9 @@
+rpn;
+
+const f=440;
+
+func foo(a, b)➡ a b * sin;
+func foo1(a)➡ a t foo;
+
+f foo1;
+fØ+ foo1;

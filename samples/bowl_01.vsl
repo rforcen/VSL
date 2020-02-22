@@ -1,0 +1,7 @@
+// bowl 01
+
+const f0=440, f1=293.7, delay=[3], bal=0.3;
+
+~bal    (~f0 ∿(f0/(t+delay) +Ø~f1 ∿(f1/(t+delay))));
+(1+~bal)(~f0 ∿(f0/(t+delay) +Ø~f1 ∿(f1/(t+delay))));
+

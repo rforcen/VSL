@@ -1,0 +1,8 @@
+// australian flower 02
+
+const seconds=4, volume=1, 
+
+am=2, f0=340, fade=-0.2;
+
+‹fade› {am} {f0+2};
+‹fade› {am} {f0};

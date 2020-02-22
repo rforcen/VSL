@@ -1,0 +1,10 @@
+// brain crack
+
+const seconds=20, 
+f0=440, f1=f0+14, k=0.2, k1=0.01, k2=0.3;
+
+let wk=(k+~k1);
+
+(1+~k2) ~(f1 wk);
+~k2     ~(f0 wk);
+

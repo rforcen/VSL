@@ -1,0 +1,9 @@
+const f=440;
+
+func ft➡Ø; // zero parameter func
+func foo1(a)➡ a*t; // one parameter
+func foo2(a,b) ➡ sin(a*b); // 2 parameters
+
+//foo2(f,t);
+sin(foo1(f));
+foo2(f+ft,t);

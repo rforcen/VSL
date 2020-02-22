@@ -1,0 +1,8 @@
+// australian flower 01
+
+const am=π, f=429.755, d=10, f1=0, rc=π, frc=f+rc, frcd=frc/d;
+let t1=τ+1;
+
+{am}  {frc}   ∿(frcd/t1) + 
+Ø     {frcØ}  ∿(frcd Ø/t1)+
+(Ø/π) {frc 2} ∿(2 frcd/t1);

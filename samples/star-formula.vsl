@@ -1,0 +1,5 @@
+rpn
+const seconds=10, div=8;
+
+3510 div / 1.4 2800 div / 150 ✬; // rpn
+

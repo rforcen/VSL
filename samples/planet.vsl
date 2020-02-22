@@ -1,0 +1,6 @@
+// planets
+const fp=194.18;
+
+~(hz2oct(fp,-7)) ~fp;
+~(hz2oct(fp,-7)) ~(fp (1+exp(-1/(2t+1))))+Ø*~(hz2oct(fp Ø, -1))+Ø ~(hz2oct(fp Ø,1));
+

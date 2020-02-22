@@ -1,0 +1,5 @@
+// am & fm - 01
+
+const mf=3, mf2=mf*2, f0=440;
+
+{mf} sin(f0 t+{mf2});
