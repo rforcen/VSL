@@ -12,13 +12,17 @@
 #include <mutex>
 #include <thread>
 
+using std::atomic;
 using std::mutex;
 using std::thread;
 
 class Thread {
  public:
   Thread()
-      : nth(int(thread::hardware_concurrency())), threads(new thread[nth]) {}
+      : nth(int(thread::hardware_concurrency())),
+        threads(new thread[nth]),
+        mtx(new mutex),
+        running(new atomic<bool>(false)) {}
   Thread(int size)
       : nth(size < int(thread::hardware_concurrency())
                 ? size
@@ -26,11 +30,13 @@ class Thread {
         segSz(size > nth ? size / nth : 1),
         size(size),
         threads(new thread[nth]),
-        mtx(new mutex) {}
+        mtx(new mutex),
+        running(new atomic<bool>(false)) {}
 
   ~Thread() {
     delete[] threads;
     if (mtx) delete mtx;
+    if (running) delete running;
   }
   static int getnthreads() { return int(thread::hardware_concurrency()); }
 
@@ -96,6 +102,15 @@ class Thread {
     for (int t = 0; t < nth; t++) threads[t].join();
   }
 
+  void run(std::function<void(int, int, int, atomic<bool> *running)> const
+               &lambda) {  // t, from, to, running
+    for (int t = 0; t < nth; t++) {
+      threads[t] =
+          thread([this, lambda, t]() { lambda(t, from(t), to(t), running); });
+    }
+    for (int t = 0; t < nth; t++) threads[t].join();
+  }
+
   void run_nojoin(std::function<void(void)> const &lambda) {  // ()
     for (int t = 0; t < nth; t++) {
       threads[t] = thread([this, lambda, t]() {
@@ -120,6 +135,28 @@ class Thread {
   thread *threads = nullptr;
 
   mutex *mtx = nullptr;  // same mutex for all threads
+  atomic<bool> *running;
+};
+
+// used in UI threading
+class ControlThread {
+ public:
+  ~ControlThread() { stop(); }
+  bool is_running() { return running; }
+  void stop() {
+    running = false;
+    if (thrd.joinable()) thrd.join();
+  }
+  void run(std::function<void()> func) {
+    stop();
+    running = true;
+    thrd = thread(func);
+  }
+  void finish() { running = false; }
+
+ private:
+  std::thread thrd;
+  std::atomic<bool> running = ATOMIC_VAR_INIT(false);
 };
 
 #endif /* Thread_h */
