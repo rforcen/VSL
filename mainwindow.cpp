@@ -11,6 +11,15 @@ MainWindow::MainWindow(QWidget *parent)
 
   init_symbol_buttons();
 
+  // init waveTable
+  for (int r = 0; r < ui->waveTable->rowCount(); r++) {
+    QTableWidgetItem *item = ui->waveTable->item(r, 0);
+    if (!item) {
+      item = new QTableWidgetItem();
+      ui->waveTable->setItem(r, 0, item);
+    }
+  }
+
   // random wave parameters form
   ui_rnd->setupUi(rnd_wind = new QMainWindow(this));
 
@@ -22,7 +31,6 @@ MainWindow::MainWindow(QWidget *parent)
   ui->chb_decompile->setVisible(false);
   ui->toolBar->addWidget(ui->chb_decompile);
 
-
   connect(c, &Common::progress, this, &MainWindow::on_progress);
   connect(c, &Common::finished, this, &MainWindow::on_finished);
 
@@ -32,20 +40,12 @@ MainWindow::MainWindow(QWidget *parent)
   prepare_wave();
   ui->decompiled->setHidden(true);
   ui->toolBar->setIconSize(QSize(32, 32));
-
-  // init waveTable
-  for (int r = 0; r < ui->waveTable->rowCount(); r++) {
-    QTableWidgetItem *item = ui->waveTable->item(r, 0);
-    if (!item) {
-      item = new QTableWidgetItem();
-      ui->waveTable->setItem(r, 0, item);
-    }
-  }
 }
 
 MainWindow::~MainWindow() {
   stop();
   saveSettings();
+  delete c;
   delete ui;
 }
 
@@ -140,7 +140,7 @@ void MainWindow::save_VSL() {
 // settings
 
 void MainWindow::loadSettings() {
-  settings = new QSettings("voicesync", "UWG");
+  settings = new QSettings("voicesync", "VSL");
 
   restoreState(settings->value("windowState").toByteArray());
   restoreGeometry(settings->value("geometry").toByteArray());
@@ -174,7 +174,7 @@ void MainWindow::on_actionnew_triggered() {
   stop();
   save_VSL();
 
-  file_VSL=QFileInfo(file_VSL).path()+QDir::separator();
+  file_VSL = QFileInfo(file_VSL).path() + QDir::separator();
   ui->editor->clear();
   c->clear();
 

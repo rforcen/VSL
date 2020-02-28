@@ -27,14 +27,9 @@ class Common : public QObject {  // data depot
  signals:
   void progress(QString msg);
   void finished();
- public slots:
-  void finish_gen() {
-    processing = false;
-    main_th.join();
-  }
 
  public:
-  Thread main_th = Thread(1);
+  ControlThread control_thread;
 
   typedef enum { t_int8, t_int16, t_int32, t_float } DataType;
 
@@ -54,7 +49,6 @@ class Common : public QObject {  // data depot
   double t = 0, t_inc = 0;  // wave generation time lap
 
   bool data_completed = false;
-  static bool processing;
 
   double progress_value = 0;
 
@@ -242,10 +236,10 @@ class Common : public QObject {  // data depot
   Common(QObject *parent = nullptr) : QObject(parent) {
     qsrand(uint(QTime::currentTime().msec()));  // random seed
 
-    connect(this, &Common::finished, this, &Common::finish_gen);
     // audio
     init_wave();
   }
+  ~Common() { control_thread.stop(); }
 
   // audio
   AudioOut *audioOut = nullptr;
@@ -334,8 +328,8 @@ class Common : public QObject {  // data depot
 
   bool generate_wave(QString expression) {  // set, compile & scale
 
-    if (processing) finish_gen();
-    processing = true;
+    control_thread.stop();
+
     data_completed = false;
 
     if (compiler.compile(expression.toStdWString())) {
@@ -353,7 +347,7 @@ class Common : public QObject {  // data depot
     buff = new AudioBuffer(byte_count());
     buff->set_type(data_type);
 
-    main_th.run_nojoin([=]() { generate(); });
+    control_thread.run([&] { generate(); });
   }
 
   void update() {  // audio
@@ -428,8 +422,7 @@ class Common : public QObject {  // data depot
 
       // compiler list for mt support
       QVector<VSL_compiler> compilers(Thread::getnthreads());
-      for (auto &c : compilers)
-        c.compile(expression.toStdWString());
+      for (auto &c : compilers) c.compile(expression.toStdWString());
       QVector<Scaler<double>> scalers(Thread::getnthreads());
       int n_values = int(n_channels * secs * sample_rate);
       QVector<float> snd(n_values);
@@ -438,43 +431,40 @@ class Common : public QObject {  // data depot
       compiler.execute(0, 0);
 
       timer.start();
-      Thread(iget_n_samples())
-          .run([=, &compilers, &scalers, &snd, &cnt](int th, int from, int to) {
-            double t = t_inc * from;  // thread timing
-            for (int samp = from, isamp = from * n_channels;
-                 samp < to && processing;
-                 samp++, t = (t > pi2 * secs) ? 0 : t + t_inc) {
-              for (int ch = 0; ch < n_channels; ch++, isamp++) {
-                double y = compilers[th].execute(t, ch);
-                scalers[th].update(y);
-                snd[isamp] = float(y);
+      Thread(iget_n_samples()).run([&](int th, int from, int to) {
+        double t = t_inc * from;  // thread timing
+        for (int samp = from, isamp = from * n_channels;
+             samp < to && control_thread.is_running();
+             samp++, t = (t > pi2 * secs) ? 0 : t + t_inc) {
+          for (int ch = 0; ch < n_channels; ch++, isamp++) {
+            double y = compilers[th].execute(t, ch);
+            scalers[th].update(y);
+            snd[isamp] = float(y);
 
-                if (++cnt % 50000 == 0) {
-                  set_progress(100. * cnt / n_values);
-                  emit progress(
-                      QString("%1 %").arg(100. * cnt / n_values, 3, 'f', 0));
-                }
-              }
+            if (++cnt % 50000 == 0) {
+              set_progress(100. * cnt / n_values);
+              emit progress(
+                  QString("%1 %").arg(100. * cnt / n_values, 3, 'f', 0));
             }
-          });
+          }
+        }
+      });
 
-      scaler.init(scalers);  // update scaler w/scalers
-      scaled_amp = scaler.scale_diff(volume * max_amp());
-      float fsa = float(scaled_amp);
+      if (control_thread.is_running()) {  // not aborted
+        scaler.init(scalers);             // update scaler w/scalers
+        scaled_amp = scaler.scale_diff(volume * max_amp());
+        float fsa = float(scaled_amp);
 
-      // fill audio buffer w/scaled values buff[i]=scaled_amp * snd[i]
-      Thread(n_values).run(
-          [=, &snd](int i) { buff->set_value(i, fsa * snd[i]); });
+        // fill audio buffer w/scaled values buff[i]=scaled_amp * snd[i]
+        Thread(n_values).run([&](int i) { buff->set_value(i, fsa * snd[i]); });
 
-      data_completed = true;
-      lap = timer.lap();
+        data_completed = true;
+        lap = timer.lap();
 
-      if (processing) {
         emit progress("100 %");
         set_progress(100);
         emit finished();
       }
-      processing = false;
     }
   }
 
